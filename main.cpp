@@ -1,4 +1,4 @@
-#include <bits/stdc++.h>
+#include "bits/stdc++.h"
 
 using namespace std;
 
@@ -41,15 +41,18 @@ vector<string> S;
 unordered_set<int> seeds[26][2];
 
 inline void RemoveIf(int index) {
-    auto current = seeds[index];
+    auto &current = seeds[index];
     if (seeds[index][UP].empty() ^
         seeds[index][LOW].empty()) {
-        auto target = current[0].empty() ? current[1] : current[0];
+        auto &target = current[0].empty() ? current[1] : current[0];
         for (auto i : target) {
             target.erase(i);
             for (auto c : S[i]) {
-                RemoveIf(toupper(c) - 'A');
+                int nx = toupper(c) - 'A';
+                if (nx == index) continue;
+                RemoveIf(nx);
             }
+            if (target.empty()) break;
         }
    }
 }
