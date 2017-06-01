@@ -77,8 +77,9 @@ int main() {
         S.push_back(tmp);
 
         for (auto c : tmp) {
-            const int isLow = islower(c);
+            const int isLow = islower(c) ? 1 : 0;
             const int index = toupper(c) - 'A';
+            cout << index << " " << isLow << endl;
             seeds[index][isLow].insert(i);
         }
     }
