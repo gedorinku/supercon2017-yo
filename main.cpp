@@ -228,7 +228,14 @@ void PrintAnswer(const Status& ans) {
         cross[i] = c;
     }
 
-    Output(1, ans.process.size(), cross);
+    {
+        Cross c;
+        c.x = c.y = n + ans.process.size();
+        strcpy(c.S, "!");
+        cross[ans.process.size()] = c;
+    }
+
+    Output(1, ans.process.size() + 1, cross);
 }
 
 void Solve() {
