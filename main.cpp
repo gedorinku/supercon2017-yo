@@ -32,7 +32,7 @@ void Output(int yn, int m, struct Cross* c) {
 
 
 constexpr int MAX_N = 2005;
-constexpr int BEAM_WIDTH = 3;
+constexpr int BEAM_WIDTH = 20;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
 constexpr int UP = 0;
@@ -112,9 +112,10 @@ struct Status {
     int eval;
     vector<int> process;
     vector<bool> used;
+    vector<vector<bool>> usedAlpha;
 
-    Status(const string& seed, const int eval, const vector<int>& process, const vector<bool>& used)
-        : seed(seed), eval(eval), process(process), used(used) {
+    Status(const string& seed, const int eval, const vector<int>& process, const vector<bool>& used, const vector<vector<bool>>& usedAlpha)
+        : seed(seed), eval(eval), process(process), used(used), usedAlpha(usedAlpha) {
     }
 
     bool operator<(const Status& right) const {
@@ -227,7 +228,6 @@ void PrintAnswer(const Status& ans) {
         strcpy(c.S, current.c_str());
         cross[i] = c;
     }
-
     {
         Cross c;
         c.x = c.y = n + ans.process.size();
@@ -238,16 +238,25 @@ void PrintAnswer(const Status& ans) {
     Output(1, ans.process.size() + 1, cross);
 }
 
+void MarkAllKuse(vector<vector<bool>>& usedAlpha, const string& seed) {
+    for (auto c : seed) {
+        const int isLow = islower(c) ? LOW : UP;
+        const int index = toupper(c) - 'A';
+        usedAlpha[index][isLow] = true;
+    }
+}
+
 void Solve() {
     queue<Status> q;
-    priority_queue<Status, vector<Status>, greater<Status>> pq; 
-    
-    {
+    priority_queue<Status, vector<Status>, greater<Status>> pq; {
         vector<bool> used(n, false);
+        vector<vector<bool>> usedAlpha(26, vector<bool>(2, false));
         for (auto i : selectedS) {
             auto temp = used;
+            auto tempAlpha = usedAlpha;
             temp[i] = true;
-            pq.emplace(Status(S[i], Evaluate(S[i]), {i}, temp));
+            MarkAllKuse(tempAlpha, S[i]);
+            pq.emplace(Status(S[i], Evaluate(S[i]), {i}, temp, usedAlpha));
         }
     }
 
@@ -262,6 +271,27 @@ void Solve() {
             auto status = q.front();
             q.pop();
 
+            for (int i = 0; i < 26; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    if (status.usedAlpha[i][j]) continue;
+                    
+                    for (auto k : selectedTable[i][j]) {
+                        if (status.used[k]) continue;
+
+                        Status next(Merge(status.seed, S[k]), 0, status.process, status.used, status.usedAlpha);
+                        next.eval = Evaluate(next.seed);
+                        next.used[k] = true;
+                        next.process.push_back(k);
+                        MarkAllKuse(next.usedAlpha, S[k]);
+                        if (next.eval == 0) {
+                            PrintAnswer(next);
+                            return;
+                        }
+                        pq.emplace(next);
+                    }
+                }
+            }
+            /*
             for (auto i : selectedS) {
                 if (status.used[i]) continue;
 
@@ -275,6 +305,7 @@ void Solve() {
                 }
                 pq.emplace(next);
             }
+            */
         }
     }
 }
@@ -297,12 +328,13 @@ int main() {
 
     if (IsNo()) {
         Output(0, 0, nullptr);
-    } else {
+    }
+    else {
         Solve();
     }
 
     auto end = chrono::high_resolution_clock::now();
     auto dur = chrono::duration_cast<chrono::microseconds>(end - start);
-    cerr << dur.count() / 1000.0  << "ms" << endl;
+    cerr << dur.count() / 1000.0 << "ms" << endl;
     cerr << "max:" << selectedS.size() << endl;
 }
