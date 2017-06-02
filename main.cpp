@@ -126,6 +126,24 @@ bool IsNo() {
     return true;
 }
 
+inline int Evaluate(const string &seed) {
+    int eval = 0;
+    for (int i = 0; i < seed.size(); ++i) {
+        if (isupper(seed[i])) {
+            eval++;
+            continue;
+        }
+        if (i == seed.size() - 1 || seed[i] != tolower(seed[i + 1])) {
+            eval++;
+            continue;
+        }
+
+        i++;
+    }
+
+    return eval;
+}
+
 int main() {
     scanf("%d", &n);
     for (int i = 0; i < n; ++i) {
