@@ -32,6 +32,7 @@ void Output(int yn, int m, struct Cross* c) {
 
 
 constexpr int MAX_N = 2005;
+constexpr int BEAM_WIDTH = 3;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
 constexpr int UP = 0;
@@ -106,27 +107,54 @@ private:
     }
 };
 
+struct Status {
+    string seed;
+    int eval;
+    vector<int> process;
+    vector<bool> used;
+
+    Status(const string& seed, const int eval, const vector<int>& process, const vector<bool>& used)
+        : seed(seed), eval(eval), process(process), used(used) {
+    }
+
+    bool operator<(const Status& right) const {
+        return eval < right.eval;
+    }
+
+    bool operator>(const Status& right) const {
+        return eval > right.eval;
+    }
+};
+
 
 int n;
 vector<string> S;
 vector<int> seeds[26][2];
+vector<int> selectedTable[26][2];
+vector<int> selectedS;
 
 bool IsNo() {
     Selector selector(n, S, seeds);
-    vector<int> result[26][2];
-    selector.Select(result);
+    selector.Select(selectedTable);
 
     for (int i = 0; i < 26; ++i) {
         for (int j = 0; j < 2; ++j) {
-            if (result[i][j].empty()) continue;
-            return false;
+            if (selectedTable[i][j].empty()) continue;
+            for (auto k : selectedTable[i][j]) {
+                selectedS.push_back(k);
+            }
         }
     }
 
-    return true;
+    if (selectedS.empty()) return true;
+
+    sort(selectedS.begin(), selectedS.end());
+    selectedS.erase(unique(selectedS.begin(), selectedS.end()), selectedS.end());
+
+    return false;
 }
 
-inline int Evaluate(const string &seed) {
+inline int Evaluate(const string& seed) {
     int eval = 0;
     for (int i = 0; i < seed.size(); ++i) {
         if (isupper(seed[i])) {
@@ -144,7 +172,109 @@ inline int Evaluate(const string &seed) {
     return eval;
 }
 
+inline void PushBackIfNotDuplicate(string& result, const char x) {
+    if (result.empty() || (!result.empty() && result[result.size() - 1] != x)) {
+        result.push_back(x);
+    }
+}
+
+inline string Merge(const string& a, const string& b) {
+    string result;
+
+    for (int i = 0, j = 0; i < a.size() || j < b.size();) {
+        if (a.size() <= i) {
+            PushBackIfNotDuplicate(result, b[j]);
+            j++;
+            continue;
+        }
+        if (b.size() <= j) {
+            PushBackIfNotDuplicate(result, a[i]);
+            i++;
+            continue;
+        }
+
+        const char ai = a[i], bj = b[j];
+        const char lowA = tolower(ai), lowB = tolower(bj);
+        if (lowA < lowB || (lowA == lowB && islower(ai))) {
+            PushBackIfNotDuplicate(result, ai);
+            i++;
+        }
+        else {
+            PushBackIfNotDuplicate(result, bj);
+            j++;
+        }
+    }
+
+    return result;
+}
+
+void PrintAnswer(const Status& ans) {
+    Cross cross[MAX_N];
+    string current;
+    {
+        Cross c;
+        c.x = ans.process[0] + 1;
+        c.y = ans.process[1] + 1;
+        current = Merge(S[c.x - 1], S[c.y - 1]);
+        strcpy(c.S, current.c_str());
+        cross[0] = c;
+    }
+    for (int i = 1; i < ans.process.size(); ++i) {
+        Cross c;
+        c.x = ans.process[i] + 1;
+        c.y = n + i;
+        current = Merge(current, S[c.x - 1]);
+        strcpy(c.S, current.c_str());
+        cross[i] = c;
+    }
+
+    Output(1, ans.process.size(), cross);
+}
+
+void Solve() {
+    queue<Status> q;
+    priority_queue<Status, vector<Status>, greater<Status>> pq; 
+    
+    {
+        vector<bool> used(n, false);
+        for (auto i : selectedS) {
+            auto temp = used;
+            temp[i] = true;
+            pq.emplace(Status(S[i], Evaluate(S[i]), {i}, temp));
+        }
+    }
+
+    while (!pq.empty()) {
+        while (q.size() < BEAM_WIDTH && !pq.empty()) {
+            q.emplace(pq.top());
+            pq.pop();
+        }
+        while (!pq.empty()) pq.pop();
+
+        while (!q.empty()) {
+            auto status = q.front();
+            q.pop();
+
+            for (auto i : selectedS) {
+                if (status.used[i]) continue;
+
+                Status next(Merge(status.seed, S[i]), 0, status.process, status.used);
+                next.eval = Evaluate(next.seed);
+                next.used[i] = true;
+                next.process.push_back(i);
+                if (next.eval == 0) {
+                    PrintAnswer(next);
+                    return;
+                }
+                pq.emplace(next);
+            }
+        }
+    }
+}
+
 int main() {
+    auto start = chrono::high_resolution_clock::now();
+
     scanf("%d", &n);
     for (int i = 0; i < n; ++i) {
         string tmp;
@@ -152,11 +282,20 @@ int main() {
         S.push_back(tmp);
 
         for (auto c : tmp) {
-            const int isLow = islower(c) ? 1 : 0;
+            const int isLow = islower(c) ? LOW : UP;
             const int index = toupper(c) - 'A';
             seeds[index][isLow].push_back(i);
         }
     }
 
-    cout << (IsNo() ? NO : YES) << endl;
+    if (IsNo()) {
+        Output(0, 0, nullptr);
+    } else {
+        Solve();
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    auto dur = chrono::duration_cast<chrono::microseconds>(end - start);
+    cerr << dur.count() / 1000.0  << "ms" << endl;
+    cerr << "max:" << selectedS.size() << endl;
 }
