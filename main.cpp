@@ -16,10 +16,11 @@ struct Cross {
  * mは交配の回数を表す．
  * cは交配の情報を持ったcross型の配列．
  */
-void Output(int yn, int m, struct Cross *c) {
+void Output(int yn, int m, struct Cross* c) {
     if (!yn) {
         printf("NO\n");
-    } else {
+    }
+    else {
         printf("YES\n");
         printf("%d\n", m);
         int i;
@@ -36,35 +37,88 @@ constexpr char NO[] = "NO";
 constexpr int UP = 0;
 constexpr int LOW = 1;
 
+class Selector {
+public:
+    Selector(const int n, const vector<string>& S, const vector<int> seeds[26][2])
+        : n(n), S(S) {
+        for (int i = 0; i < n; ++i) {
+            isErasable[i] = true;
+        }
+
+        for (int i = 0; i < 26; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                count[i][j] = seeds[i][j].size();
+            }
+        }
+
+        for (int i = 0; i < 26; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                this->seeds[i][j] = &seeds[i][j];
+            }
+        }
+    }
+
+    void Select(vector<int> result[26][2]) {
+        for (int i = 0; i < 26; ++i) {
+            RemoveIf(i);
+        }
+
+        for (int i = 0; i < 26; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                result[i][j].reserve(count[i][j]);
+                for (auto k : *seeds[i][j]) {
+                    if (!isErasable[k]) continue;
+                    result[i][j].push_back(k);
+                }
+            }
+        }
+    }
+
+private:
+    const int n;
+    const vector<string>& S;
+    const vector<int>* seeds[26][2];
+    bool isErasable[MAX_N];
+    int count[26][2];
+
+    inline void RemoveIf(int index) {
+        if ((count[index][UP] == 0) ^
+            (count[index][LOW] == 0)) {
+            const auto current = seeds[index];
+            const auto target = count[index][UP] ? *current[UP] : *current[LOW];
+            count[index][UP] = count[index][LOW] = 0;
+
+            for (auto i : target) {
+                if (!isErasable[i]) continue;
+                isErasable[i] = false;
+
+                for (auto c : S[i]) {
+                    const int nx = toupper(c) - 'A';
+                    if (nx == index) continue;
+                    const int up = isupper(c) ? 0 : 1;
+                    if (count[nx][up] == 0) continue;
+                    count[nx][up]--;
+                    assert(0 <= count[nx][up]);
+                    RemoveIf(nx);
+                }
+            }
+        }
+    }
+};
+
+
 int n;
 vector<string> S;
-unordered_set<int> seeds[26][2];
-
-inline void RemoveIf(int index) {
-    auto &current = seeds[index];
-    if (seeds[index][UP].empty() ^
-        seeds[index][LOW].empty()) {
-        auto &target = current[0].empty() ? current[1] : current[0];
-        for (auto i : target) {
-            target.erase(i);
-            for (auto c : S[i]) {
-                int nx = toupper(c) - 'A';
-                if (nx == index) continue;
-                RemoveIf(nx);
-            }
-            if (target.empty()) break;
-        }
-   }
-}
+vector<int> seeds[26][2];
 
 bool IsNo() {
-    for (int i = 0; i < 26; ++i) {
-        RemoveIf(i);
-    }
+    Selector selector(n, S, seeds);
+    vector<int> result[26][2];
+    selector.Select(result);
 
     for (int i = 0; i < 26; ++i) {
         for (int j = 0; j < 2; ++j) {
-            if (seeds[i][j].empty()) continue;
+            if (result[i][j].empty()) continue;
             return false;
         }
     }
@@ -82,8 +136,7 @@ int main() {
         for (auto c : tmp) {
             const int isLow = islower(c) ? 1 : 0;
             const int index = toupper(c) - 'A';
-            cout << index << " " << isLow << endl;
-            seeds[index][isLow].insert(i);
+            seeds[index][isLow].push_back(i);
         }
     }
 
