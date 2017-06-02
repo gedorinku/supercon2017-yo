@@ -95,7 +95,7 @@ private:
                 for (auto c : S[i]) {
                     const int nx = toupper(c) - 'A';
                     if (nx == index) continue;
-                    const int up = isupper(c) ? 0 : 1;
+                    const int up = isupper(c) ? UP : LOW;
                     if (count[nx][up] == 0) continue;
                     count[nx][up]--;
                     assert(0 <= count[nx][up]);
