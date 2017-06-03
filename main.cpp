@@ -32,7 +32,7 @@ void Output(int yn, int m, struct Cross* c) {
 
 
 constexpr int MAX_N = 2005;
-constexpr int BEAM_WIDTH = 5;
+constexpr int BEAM_WIDTH = 6;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
 constexpr int UP = 0;
@@ -260,13 +260,7 @@ void Solve() {
         }
     }
 
-    while (!pq.empty()) {
-        while (q.size() < BEAM_WIDTH && !pq.empty()) {
-            q.emplace(pq.top());
-            pq.pop();
-        }
-        while (!pq.empty()) pq.pop();
-
+    while (true) {
         while (!q.empty()) {
             auto status = q.front();
             q.pop();
@@ -307,6 +301,12 @@ void Solve() {
             }
             */
         }
+
+        while (q.size() < BEAM_WIDTH && !pq.empty()) {
+            q.emplace(pq.top());
+            pq.pop();
+        }
+        while (!pq.empty()) pq.pop();
     }
 }
 
