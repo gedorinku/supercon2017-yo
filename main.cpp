@@ -32,7 +32,7 @@ void Output(int yn, int m, struct Cross* c) {
 
 
 constexpr int MAX_N = 2005;
-constexpr int BEAM_WIDTH = 6;
+constexpr int INF = 1 << 30;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
 constexpr int UP = 0;
@@ -108,14 +108,18 @@ private:
 };
 
 struct Status {
-    string seed;
     int eval;
     vector<int> process;
-    vector<bool> used;
-    vector<vector<bool>> usedAlpha;
+    vector<bitset<2>> usedAlpha;
 
-    Status(const string& seed, const int eval, const vector<int>& process, const vector<bool>& used, const vector<vector<bool>>& usedAlpha)
-        : seed(seed), eval(eval), process(process), used(used), usedAlpha(usedAlpha) {
+    Status() : eval(INF) {
+    }
+
+    Status(int n) : eval(INF), usedAlpha(26, bitset<2>(0)) {
+    }
+
+    Status(const int eval, const vector<int>& process, const vector<bitset<2>>& usedAlpha)
+        : eval(eval), process(process), usedAlpha(usedAlpha) {
     }
 
     bool operator<(const Status& right) const {
@@ -173,6 +177,33 @@ inline int Evaluate(const string& seed) {
     return eval;
 }
 
+inline int Evaluate(const vector<bitset<2>>& usedAlpha) {
+    int eval = 0;
+    for (int i = 0; i < 26; ++i) {
+        if (usedAlpha[i][UP] ^ usedAlpha[i][LOW]) eval++;
+    }
+
+    return eval;
+}
+
+inline int Evaluate(const vector<bitset<2>>& usedAlpha, const string& mergeSeed) {
+    int eval = 0, j = 0;
+
+    for (int i = 0; i < 26; ++i) {
+        if (j < mergeSeed.size() && tolower(mergeSeed[j]) - 'a' == i) {
+            bool isDup = (j + 1 < mergeSeed.size() && tolower(mergeSeed[j + 1]) - 'a' == i);
+            bool low = islower(mergeSeed[j]);
+            bool upper = isupper(mergeSeed[j]) || isDup;
+            if ((low || usedAlpha[i][LOW]) ^ (upper || usedAlpha[i][UP])) eval++;
+            if (isDup) j += 2;
+            else j++;
+        }
+        else if (usedAlpha[i][LOW] ^ usedAlpha[i][UP]) eval++;
+    }
+
+    return eval;
+}
+
 inline void PushBackIfNotDuplicate(string& result, const char x) {
     if (result.empty() || (!result.empty() && result[result.size() - 1] != x)) {
         result.push_back(x);
@@ -220,25 +251,25 @@ void PrintAnswer(const Status& ans) {
         strcpy(c.S, current.c_str());
         cross[0] = c;
     }
-    for (int i = 1; i < ans.process.size(); ++i) {
+    for (int i = 2; i < ans.process.size(); ++i) {
         Cross c;
         c.x = ans.process[i] + 1;
-        c.y = n + i;
+        c.y = n + i - 1;
         current = Merge(current, S[c.x - 1]);
         strcpy(c.S, current.c_str());
-        cross[i] = c;
+        cross[i - 1] = c;
     }
     {
         Cross c;
-        c.x = c.y = n + ans.process.size();
+        c.x = c.y = n + ans.process.size() - 1;
         strcpy(c.S, "!");
-        cross[ans.process.size()] = c;
+        cross[ans.process.size() - 1] = c;
     }
 
-    Output(1, ans.process.size() + 1, cross);
+    Output(1, ans.process.size(), cross);
 }
 
-void MarkAllKuse(vector<vector<bool>>& usedAlpha, const string& seed) {
+void MarkAllKuse(vector<bitset<2>>& usedAlpha, const string& seed) {
     for (auto c : seed) {
         const int isLow = islower(c) ? LOW : UP;
         const int index = toupper(c) - 'A';
@@ -246,67 +277,62 @@ void MarkAllKuse(vector<vector<bool>>& usedAlpha, const string& seed) {
     }
 }
 
-void Solve() {
-    queue<Status> q;
-    priority_queue<Status, vector<Status>, greater<Status>> pq; {
-        vector<bool> used(n, false);
-        vector<vector<bool>> usedAlpha(26, vector<bool>(2, false));
-        for (auto i : selectedS) {
-            auto temp = used;
-            auto tempAlpha = usedAlpha;
-            temp[i] = true;
-            MarkAllKuse(tempAlpha, S[i]);
-            pq.emplace(Status(S[i], Evaluate(S[i]), {i}, temp, usedAlpha));
+
+Status current, best;
+
+void Solve(int preUsed) {
+    //cerr << "::" << preUsed << endl;
+    int nextSeed;
+    int currentBestEval = INF;
+
+
+
+    for (int i = 0; i < 26; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            if (current.usedAlpha[i][j]) continue;
+
+            for (auto k : selectedTable[i][j]) {
+                if (k < preUsed) continue;
+
+                const int eval = Evaluate(current.usedAlpha, S[k]);
+                if (eval < currentBestEval) {
+                    currentBestEval = eval;
+                    nextSeed = k;
+                }
+            }
         }
     }
 
-    while (true) {
-        while (!q.empty()) {
-            auto status = q.front();
-            q.pop();
+    //for (auto p : nextSeed) {
+    if (currentBestEval != INF) {
+        const int i = nextSeed;
+        int preEval = current.eval;
+        auto preUsedAlpha = current.usedAlpha;
+        current.eval = currentBestEval;
+        //current.usedAlpha[i][j] = true;
+        MarkAllKuse(current.usedAlpha, S[i]);
 
-            for (int i = 0; i < 26; ++i) {
-                for (int j = 0; j < 2; ++j) {
-                    if (status.usedAlpha[i][j]) continue;
-                    
-                    for (auto k : selectedTable[i][j]) {
-                        if (status.used[k]) continue;
+        current.process.push_back(i);
 
-                        Status next(Merge(status.seed, S[k]), 0, status.process, status.used, status.usedAlpha);
-                        next.eval = Evaluate(next.seed);
-                        next.used[k] = true;
-                        next.process.push_back(k);
-                        MarkAllKuse(next.usedAlpha, S[k]);
-                        if (next.eval == 0) {
-                            PrintAnswer(next);
-                            return;
-                        }
-                        pq.emplace(next);
-                    }
-                }
+        bool finished = false;
+
+        if (current.eval == 0) {
+            if (best.process.empty() || current.process.size() < best.process.size()) {
+                best = current;
+                cerr << "best:" << best.process.size() << endl;
             }
-            /*
-            for (auto i : selectedS) {
-                if (status.used[i]) continue;
-
-                Status next(Merge(status.seed, S[i]), 0, status.process, status.used);
-                next.eval = Evaluate(next.seed);
-                next.used[i] = true;
-                next.process.push_back(i);
-                if (next.eval == 0) {
-                    PrintAnswer(next);
-                    return;
-                }
-                pq.emplace(next);
-            }
-            */
+            finished = true;
         }
 
-        while (q.size() < BEAM_WIDTH && !pq.empty()) {
-            q.emplace(pq.top());
-            pq.pop();
+        if (best.process.empty() || current.process.size() < best.process.size() - 1) {
+            Solve(i);
         }
-        while (!pq.empty()) pq.pop();
+
+        current.eval = preEval;
+        current.usedAlpha = preUsedAlpha;
+        current.process.pop_back();
+
+        if (finished) return;
     }
 }
 
@@ -326,15 +352,41 @@ int main() {
         }
     }
 
+    current = Status(n);
+    best = Status(n);
+
     if (IsNo()) {
         Output(0, 0, nullptr);
     }
     else {
-        Solve();
+        vector<pair<int, int>> sortedS;
+        for (auto i : selectedS) {
+            sortedS.push_back(make_pair(Evaluate(S[i]), i));
+        }
+        sort(sortedS.begin(), sortedS.end());
+
+        for (auto i : sortedS) {
+            //cerr << i.second << "#" << endl;
+            current = Status(n);
+
+            current.eval = Evaluate(S[i.second]);
+            MarkAllKuse(current.usedAlpha, S[i.second]);
+            current.process.push_back(i.second);
+            Solve(i.second);
+        }
+        PrintAnswer(best);
     }
 
     auto end = chrono::high_resolution_clock::now();
     auto dur = chrono::duration_cast<chrono::microseconds>(end - start);
     cerr << dur.count() / 1000.0 << "ms" << endl;
-    cerr << "max:" << selectedS.size() << endl;
+
+    int maxv = 0;
+    for (int i = 0; i < 26; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            if (selectedTable[i][j].empty()) continue;
+            maxv++;
+        }
+    }
+    cout << "max:" << maxv << endl;
 }
