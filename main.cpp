@@ -108,20 +108,18 @@ private:
 };
 
 struct Status {
-    string seed;
     int eval;
     vector<int> process;
-    vector<bool> used;
-    vector<vector<bool>> usedAlpha;
+    vector<bitset<2>> usedAlpha;
 
     Status() : eval(INF) {
     }
 
-    Status(int n) : eval(INF), used(n, false), usedAlpha(26, vector<bool>(2, false)) {
+    Status(int n) : eval(INF), usedAlpha(26, bitset<2>(0)) {
     }
 
-    Status(const string& seed, const int eval, const vector<int>& process, const vector<bool>& used, const vector<vector<bool>>& usedAlpha)
-        : seed(seed), eval(eval), process(process), used(used), usedAlpha(usedAlpha) {
+    Status(const int eval, const vector<int>& process, const vector<bitset<2>>& usedAlpha)
+        : eval(eval), process(process), usedAlpha(usedAlpha) {
     }
 
     bool operator<(const Status& right) const {
@@ -174,6 +172,33 @@ inline int Evaluate(const string& seed) {
         }
 
         i++;
+    }
+
+    return eval;
+}
+
+inline int Evaluate(const vector<bitset<2>>& usedAlpha) {
+    int eval = 0;
+    for (int i = 0; i < 26; ++i) {
+        if (usedAlpha[i][UP] ^ usedAlpha[i][LOW]) eval++;
+    }
+
+    return eval;
+}
+
+inline int Evaluate(const vector<bitset<2>>& usedAlpha, const string& mergeSeed) {
+    int eval = 0, j = 0;
+
+    for (int i = 0; i < 26; ++i) {
+        if (j < mergeSeed.size() && tolower(mergeSeed[j]) - 'a' == i) {
+            bool isDup = (j + 1 < mergeSeed.size() && tolower(mergeSeed[j + 1]) - 'a' == i);
+            bool low = islower(mergeSeed[j]);
+            bool upper = isupper(mergeSeed[j]) || isDup;
+            if ((low || usedAlpha[i][LOW]) ^ (upper || usedAlpha[i][UP])) eval++;
+            if (isDup) j += 2;
+            else j++;
+        }
+        else if (usedAlpha[i][LOW] ^ usedAlpha[i][UP]) eval++;
     }
 
     return eval;
@@ -244,7 +269,7 @@ void PrintAnswer(const Status& ans) {
     Output(1, ans.process.size(), cross);
 }
 
-void MarkAllKuse(vector<vector<bool>>& usedAlpha, const string& seed) {
+void MarkAllKuse(vector<bitset<2>>& usedAlpha, const string& seed) {
     for (auto c : seed) {
         const int isLow = islower(c) ? LOW : UP;
         const int index = toupper(c) - 'A';
@@ -265,9 +290,10 @@ void Solve(int preUsed) {
             if (current.usedAlpha[i][j]) continue;
 
             for (auto k : selectedTable[i][j]) {
-                if (current.used[k] || k < preUsed) continue;
+                if (k < preUsed) continue;
 
-                nextSeed.push_back({ Evaluate(Merge(current.seed, S[k])), k });
+                const int eval = Evaluate(current.usedAlpha, S[k]);
+                nextSeed.push_back({ eval, k });
             }
         }
     }
@@ -280,12 +306,9 @@ void Solve(int preUsed) {
     if (!nextSeed.empty()) {
         auto p = nextSeed[0];
         int i = p.second;
-        string pre = current.seed;
         int preEval = current.eval;
         auto preUsedAlpha = current.usedAlpha;
-        current.seed = Merge(current.seed, S[i]);
         current.eval = p.first;
-        current.used[i] = true;
         //current.usedAlpha[i][j] = true;
         MarkAllKuse(current.usedAlpha, S[i]);
 
@@ -305,9 +328,7 @@ void Solve(int preUsed) {
             Solve(i);
         }
 
-        current.seed = pre;
         current.eval = preEval;
-        current.used[i] = false;
         current.usedAlpha = preUsedAlpha;
         current.process.pop_back();
 
@@ -348,10 +369,8 @@ int main() {
             //cerr << i.second << "#" << endl;
             current = Status(n);
 
-            current.seed = Merge(current.seed, S[i.second]);
-            current.eval = Evaluate(current.seed);
-            current.used[i.second] = true;
-            MarkAllKuse(current.usedAlpha, current.seed);
+            current.eval = Evaluate(S[i.second]);
+            MarkAllKuse(current.usedAlpha, S[i.second]);
             current.process.push_back(i.second);
             Solve(i.second);
         }
