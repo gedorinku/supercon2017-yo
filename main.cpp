@@ -32,6 +32,7 @@ void Output(int yn, int m, struct Cross* c) {
 
 
 constexpr int MAX_N = 2005;
+constexpr int LOOP = 20000;
 constexpr int INF = 1 << 30;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
@@ -277,62 +278,47 @@ void MarkAllKuse(vector<bitset<2>>& usedAlpha, const string& seed) {
     }
 }
 
+int EvaluateAll(const vector<int> process) {
+    string current;
 
-Status current, best;
-
-void Solve(int preUsed) {
-    //cerr << "::" << preUsed << endl;
-    int nextSeed;
-    int currentBestEval = INF;
-
-
-
-    for (int i = 0; i < 26; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            if (current.usedAlpha[i][j]) continue;
-
-            for (auto k : selectedTable[i][j]) {
-                if (k < preUsed) continue;
-
-                const int eval = Evaluate(current.usedAlpha, S[k]);
-                if (eval < currentBestEval) {
-                    currentBestEval = eval;
-                    nextSeed = k;
-                }
-            }
-        }
+    for (int i = 0; i < process.size(); ++i) {
+        current = Merge(current, S[process[i]]);
+        if (Evaluate(current) == 0) return i;
     }
 
-    //for (auto p : nextSeed) {
-    if (currentBestEval != INF) {
-        const int i = nextSeed;
-        int preEval = current.eval;
-        auto preUsedAlpha = current.usedAlpha;
-        current.eval = currentBestEval;
-        //current.usedAlpha[i][j] = true;
-        MarkAllKuse(current.usedAlpha, S[i]);
+    assert(false);
+}
 
-        current.process.push_back(i);
+bool IsChange(int cnt) {
+    return cnt < rand() % LOOP + 1;
+}
 
-        bool finished = false;
+Status best;
 
-        if (current.eval == 0) {
-            if (best.process.empty() || current.process.size() < best.process.size()) {
-                best = current;
-                cerr << "best:" << best.process.size() << endl;
+void Solve() {
+    vector<int> process = selectedS;
+    int eval = EvaluateAll(process), mi = eval;
+    best.process = process;
+    best.eval = eval;
+
+    for (int i = 0; i < LOOP; ++i) {
+        int a = rand() % process.size(), b = rand() % process.size();
+        swap(process[a], process[b]);
+
+        int nextEval = EvaluateAll(process);
+        if (nextEval < eval || IsChange(i)) {
+            eval = nextEval;
+            if (eval < mi) {
+                mi = eval;
+                best.eval = mi;
+                best.process.clear();
+                for (int j = 0; j < eval + 1; ++j) {
+                    best.process.emplace_back(process[j]);
+                }
             }
-            finished = true;
+        } else {
+            swap(process[a], process[b]);
         }
-
-        if (best.process.empty() || current.process.size() < best.process.size() - 1) {
-            Solve(i);
-        }
-
-        current.eval = preEval;
-        current.usedAlpha = preUsedAlpha;
-        current.process.pop_back();
-
-        if (finished) return;
     }
 }
 
@@ -352,28 +338,13 @@ int main() {
         }
     }
 
-    current = Status(n);
     best = Status(n);
 
     if (IsNo()) {
         Output(0, 0, nullptr);
     }
     else {
-        vector<pair<int, int>> sortedS;
-        for (auto i : selectedS) {
-            sortedS.push_back(make_pair(Evaluate(S[i]), i));
-        }
-        sort(sortedS.begin(), sortedS.end());
-
-        for (auto i : sortedS) {
-            //cerr << i.second << "#" << endl;
-            current = Status(n);
-
-            current.eval = Evaluate(S[i.second]);
-            MarkAllKuse(current.usedAlpha, S[i.second]);
-            current.process.push_back(i.second);
-            Solve(i.second);
-        }
+        Solve();
         PrintAnswer(best);
     }
 
