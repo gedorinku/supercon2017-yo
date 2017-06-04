@@ -282,7 +282,9 @@ Status current, best;
 
 void Solve(int preUsed) {
     //cerr << "::" << preUsed << endl;
-    vector<pair<int, int>> nextSeed;
+    int nextSeed;
+    int currentBestEval = INF;
+
 
 
     for (int i = 0; i < 26; ++i) {
@@ -293,22 +295,20 @@ void Solve(int preUsed) {
                 if (k < preUsed) continue;
 
                 const int eval = Evaluate(current.usedAlpha, S[k]);
-                nextSeed.push_back({ eval, k });
+                if (eval < currentBestEval) {
+                    currentBestEval = eval;
+                    nextSeed = k;
+                }
             }
         }
     }
 
-    sort(nextSeed.begin(), nextSeed.end());
-    nextSeed.erase(unique(nextSeed.begin(), nextSeed.end()), nextSeed.end());
-    //cerr << "::" << nextSeed.size() << endl;
-
     //for (auto p : nextSeed) {
-    if (!nextSeed.empty()) {
-        auto p = nextSeed[0];
-        int i = p.second;
+    if (currentBestEval != INF) {
+        const int i = nextSeed;
         int preEval = current.eval;
         auto preUsedAlpha = current.usedAlpha;
-        current.eval = p.first;
+        current.eval = currentBestEval;
         //current.usedAlpha[i][j] = true;
         MarkAllKuse(current.usedAlpha, S[i]);
 
