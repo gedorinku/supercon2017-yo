@@ -424,5 +424,5 @@ int main() {
             maxv++;
         }
     }
-    cout << "max:" << maxv << endl;
+    cerr << "max:" << maxv << endl;
 }
