@@ -8,7 +8,7 @@ using namespace std;
  */
 struct Cross {
     int x, y;
-    char S[52];
+    char S[53];
 };
 
 /**
