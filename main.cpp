@@ -307,31 +307,22 @@ void MarkAllKuse(int64_t &usedAlpha, const string &seed) {
 
 
 Status current, best;
-unordered_set<int> evaluatedSeed;
 
 void Solve() {
     //cerr << "::" << preUsed << endl;
     int nextSeed;
     int currentBestEval = INF;
 
-    evaluatedSeed.clear();
-
     for (int i = 0; i < 26; ++i) {
         for (int j = 0; j < 2; ++j) {
             if (getBit(current.usedAlpha, i, j)) continue;
 
             for (auto k : selectedTable[i][j]) {
-                if (current.process.find(k) != current.process.end() ||
-                    evaluatedSeed.find(k) != evaluatedSeed.end())
-                    continue;
-
                 const int eval = Evaluate(current.usedAlpha, alphaSeedUsing[k]);
                 if (eval < currentBestEval) {
                     currentBestEval = eval;
                     nextSeed = k;
                 }
-
-                evaluatedSeed.insert(k);
             }
         }
     }
