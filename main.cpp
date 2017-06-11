@@ -280,7 +280,7 @@ void MarkAllKuse(vector<bitset<2>>& usedAlpha, const string& seed) {
 
 Status current, best;
 
-void Solve(int preUsed) {
+void Solve() {
     //cerr << "::" << preUsed << endl;
     int nextSeed;
     int currentBestEval = INF;
@@ -292,7 +292,7 @@ void Solve(int preUsed) {
             if (current.usedAlpha[i][j]) continue;
 
             for (auto k : selectedTable[i][j]) {
-                if (k < preUsed) continue;
+                if (find(current.process.begin(), current.process.end(), k) != current.process.end()) continue;
 
                 const int eval = Evaluate(current.usedAlpha, S[k]);
                 if (eval < currentBestEval) {
@@ -325,7 +325,7 @@ void Solve(int preUsed) {
         }
 
         if (best.process.empty() || current.process.size() < best.process.size() - 1) {
-            Solve(i);
+            Solve();
         }
 
         current.eval = preEval;
@@ -372,7 +372,7 @@ int main() {
             current.eval = Evaluate(S[i.second]);
             MarkAllKuse(current.usedAlpha, S[i.second]);
             current.process.push_back(i.second);
-            Solve(i.second);
+            Solve();
         }
         PrintAnswer(best);
     }
