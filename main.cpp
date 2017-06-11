@@ -16,11 +16,10 @@ struct Cross {
  * mは交配の回数を表す．
  * cは交配の情報を持ったcross型の配列．
  */
-void Output(int yn, int m, struct Cross* c) {
+void Output(int yn, int m, struct Cross *c) {
     if (!yn) {
         printf("NO\n");
-    }
-    else {
+    } else {
         printf("YES\n");
         printf("%d\n", m);
         int i;
@@ -40,8 +39,8 @@ constexpr int LOW = 1;
 
 class Selector {
 public:
-    Selector(const int n, const vector<string>& S, const vector<int> seeds[26][2])
-        : n(n), S(S) {
+    Selector(const int n, const vector<string> &S, const vector<int> seeds[26][2])
+            : n(n), S(S) {
         for (int i = 0; i < n; ++i) {
             isErasable[i] = true;
         }
@@ -77,8 +76,8 @@ public:
 
 private:
     const int n;
-    const vector<string>& S;
-    const vector<int>* seeds[26][2];
+    const vector<string> &S;
+    const vector<int> *seeds[26][2];
     bool isErasable[MAX_N];
     int count[26][2];
 
@@ -110,27 +109,64 @@ private:
 struct Status {
     int eval;
     unordered_set<int> process;
-    vector<bitset<2>> usedAlpha;
+    long long usedAlpha;
 
 
     Status() : eval(INF) {
     }
 
-    Status(int n) : eval(INF), usedAlpha(26, bitset<2>(0)) {
+    Status(int n) : eval(INF), usedAlpha(0) {
     }
 
-    Status(const int eval, const unordered_set<int>& process, const vector<bitset<2>>& usedAlpha)
-        : eval(eval), process(process), usedAlpha(usedAlpha) {
+    Status(const int eval, const unordered_set<int> &process, const long long &usedAlpha)
+            : eval(eval), process(process), usedAlpha(usedAlpha) {
     }
 
-    bool operator<(const Status& right) const {
+    bool operator<(const Status &right) const {
         return eval < right.eval;
     }
 
-    bool operator>(const Status& right) const {
+    bool operator>(const Status &right) const {
         return eval > right.eval;
     }
 };
+
+
+array<array<int64_t, 2>, 26> generateMask() {
+    array<array<int64_t, 2>, 26> mask;
+
+    int64_t tmp = 1;
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < mask.size(); ++j) {
+            mask[j][i] = tmp;
+            tmp <<= 1;
+        }
+    }
+
+    return mask;
+}
+
+array<array<int64_t, 2>, 26> bitMask;
+
+inline bool getBit(const int64_t &bits, const int alpha, const int isLower) {
+    return (bits & (bitMask[alpha][isLower])) != 0;
+}
+
+inline void setBit(int64_t &bits, const int alpha, const int isLower, const bool x) {
+    if (x) {
+        bits |= bitMask[alpha][isLower];
+    } else {
+        bits &= ~bitMask[alpha][isLower];
+    }
+}
+
+inline int countBits(int32_t bits) {
+    bits = (bits & 0x55555555) + (bits >> 1 & 0x55555555);
+    bits = (bits & 0x33333333) + (bits >> 2 & 0x33333333);
+    bits = (bits & 0x0f0f0f0f) + (bits >> 4 & 0x0f0f0f0f);
+    bits = (bits & 0x00ff00ff) + (bits >> 8 & 0x00ff00ff);
+    return (bits & 0x0000ffff) + (bits >> 16 & 0x0000ffff);
+}
 
 
 int n;
@@ -138,6 +174,7 @@ vector<string> S;
 vector<int> seeds[26][2];
 vector<int> selectedTable[26][2];
 vector<int> selectedS;
+vector<int64_t> alphaSeedUsing;
 
 bool IsNo() {
     Selector selector(n, S, seeds);
@@ -160,7 +197,7 @@ bool IsNo() {
     return false;
 }
 
-inline int Evaluate(const string& seed) {
+inline int Evaluate(const string &seed) {
     int eval = 0;
     for (int i = 0; i < seed.size(); ++i) {
         if (isupper(seed[i])) {
@@ -178,7 +215,7 @@ inline int Evaluate(const string& seed) {
     return eval;
 }
 
-inline int Evaluate(const vector<bitset<2>>& usedAlpha) {
+inline int Evaluate(const vector<bitset<2>> &usedAlpha) {
     int eval = 0;
     for (int i = 0; i < 26; ++i) {
         if (usedAlpha[i][UP] ^ usedAlpha[i][LOW]) eval++;
@@ -187,31 +224,21 @@ inline int Evaluate(const vector<bitset<2>>& usedAlpha) {
     return eval;
 }
 
-inline int Evaluate(const vector<bitset<2>>& usedAlpha, const string& mergeSeed) {
-    int eval = 0, j = 0;
-
-    for (int i = 0; i < 26; ++i) {
-        if (j < mergeSeed.size() && tolower(mergeSeed[j]) - 'a' == i) {
-            bool isDup = (j + 1 < mergeSeed.size() && tolower(mergeSeed[j + 1]) - 'a' == i);
-            bool low = islower(mergeSeed[j]);
-            bool upper = isupper(mergeSeed[j]) || isDup;
-            if ((low || usedAlpha[i][LOW]) ^ (upper || usedAlpha[i][UP])) eval++;
-            if (isDup) j += 2;
-            else j++;
-        }
-        else if (usedAlpha[i][LOW] ^ usedAlpha[i][UP]) eval++;
-    }
-
-    return eval;
+inline int Evaluate(const int64_t &usedAlpha, const int64_t &mergeSeedAlpha) {
+    int64_t nextUsedAlpha = usedAlpha | mergeSeedAlpha;
+    constexpr int64_t mask = 0b0011'1111'1111'1111'1111'1111'1111;
+    int32_t upper = nextUsedAlpha & mask;
+    int32_t lower = nextUsedAlpha >> 26;
+    return countBits(upper ^ lower);
 }
 
-inline void PushBackIfNotDuplicate(string& result, const char x) {
+inline void PushBackIfNotDuplicate(string &result, const char x) {
     if (result.empty() || (!result.empty() && result[result.size() - 1] != x)) {
         result.push_back(x);
     }
 }
 
-inline string Merge(const string& a, const string& b) {
+inline string Merge(const string &a, const string &b) {
     string result;
 
     for (int i = 0, j = 0; i < a.size() || j < b.size();) {
@@ -231,8 +258,7 @@ inline string Merge(const string& a, const string& b) {
         if (lowA < lowB || (lowA == lowB && islower(ai))) {
             PushBackIfNotDuplicate(result, ai);
             i++;
-        }
-        else {
+        } else {
             PushBackIfNotDuplicate(result, bj);
             j++;
         }
@@ -241,7 +267,7 @@ inline string Merge(const string& a, const string& b) {
     return result;
 }
 
-void PrintAnswer(const Status& ans) {
+void PrintAnswer(const Status &ans) {
     Cross cross[MAX_N];
     string current;
     auto it = ans.process.begin();
@@ -271,36 +297,41 @@ void PrintAnswer(const Status& ans) {
     Output(1, ans.process.size(), cross);
 }
 
-void MarkAllKuse(vector<bitset<2>>& usedAlpha, const string& seed) {
+void MarkAllKuse(int64_t &usedAlpha, const string &seed) {
     for (auto c : seed) {
         const int isLow = islower(c) ? LOW : UP;
         const int index = toupper(c) - 'A';
-        usedAlpha[index][isLow] = true;
+        setBit(usedAlpha, index, isLow, true);
     }
 }
 
 
 Status current, best;
+unordered_set<int> evaluatedSeed;
 
 void Solve() {
     //cerr << "::" << preUsed << endl;
     int nextSeed;
     int currentBestEval = INF;
 
-
+    evaluatedSeed.clear();
 
     for (int i = 0; i < 26; ++i) {
         for (int j = 0; j < 2; ++j) {
-            if (current.usedAlpha[i][j]) continue;
+            if (getBit(current.usedAlpha, i, j)) continue;
 
             for (auto k : selectedTable[i][j]) {
-                if (current.process.find(k) != current.process.end()) continue;
+                if (current.process.find(k) != current.process.end() ||
+                    evaluatedSeed.find(k) != evaluatedSeed.end())
+                    continue;
 
-                const int eval = Evaluate(current.usedAlpha, S[k]);
+                const int eval = Evaluate(current.usedAlpha, alphaSeedUsing[k]);
                 if (eval < currentBestEval) {
                     currentBestEval = eval;
                     nextSeed = k;
                 }
+
+                evaluatedSeed.insert(k);
             }
         }
     }
@@ -341,16 +372,20 @@ void Solve() {
 int main() {
     auto start = chrono::high_resolution_clock::now();
 
+    bitMask = generateMask();
+
     scanf("%d", &n);
     for (int i = 0; i < n; ++i) {
         string tmp;
         cin >> tmp;
         S.push_back(tmp);
 
+        alphaSeedUsing.push_back(0);
         for (auto c : tmp) {
             const int isLow = islower(c) ? LOW : UP;
             const int index = toupper(c) - 'A';
             seeds[index][isLow].push_back(i);
+            setBit(alphaSeedUsing[i], index, isLow, true);
         }
     }
 
@@ -359,8 +394,7 @@ int main() {
 
     if (IsNo()) {
         Output(0, 0, nullptr);
-    }
-    else {
+    } else {
         vector<pair<int, int>> sortedS;
         for (auto i : selectedS) {
             sortedS.push_back(make_pair(Evaluate(S[i]), i));
