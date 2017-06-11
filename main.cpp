@@ -109,7 +109,7 @@ private:
 struct Status {
     int eval;
     unordered_set<int> process;
-    long long usedAlpha;
+    int64_t usedAlpha;
 
 
     Status() : eval(INF) {
@@ -118,7 +118,7 @@ struct Status {
     Status(int n) : eval(INF), usedAlpha(0) {
     }
 
-    Status(const int eval, const unordered_set<int> &process, const long long &usedAlpha)
+    Status(const int eval, const unordered_set<int> &process, const int64_t &usedAlpha)
             : eval(eval), process(process), usedAlpha(usedAlpha) {
     }
 
@@ -303,7 +303,7 @@ void PrintAnswer(const Status &ans) {
     Output(1, ans.process.size(), cross);
 }
 
-void MarkAllKuse(int64_t &usedAlpha, const string &seed) {
+void MarkAllKuse(int64_t& usedAlpha, const string &seed) {
     for (auto c : seed) {
         const int isLow = islower(c) ? LOW : UP;
         const int index = toupper(c) - 'A';
