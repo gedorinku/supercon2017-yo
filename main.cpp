@@ -271,6 +271,12 @@ void PrintAnswer(const Status &ans) {
     Cross cross[MAX_N];
     string current;
     auto it = ans.process.begin();
+    if (ans.process.size() == 1) {
+        cross[0].x = cross[0].y = *it + 1;
+        strcpy(cross[0].S, "!");
+        Output(1, 1, cross);
+        return;
+    }
     {
         Cross c;
         c.x = *(it++) + 1;
@@ -399,6 +405,10 @@ int main() {
             current.eval = Evaluate(S[i.second]);
             MarkAllKuse(current.usedAlpha, S[i.second]);
             current.process.insert(i.second);
+            if (i.first == 0) {
+                best = current;
+                break;
+            }
             Solve();
         }
         PrintAnswer(best);
