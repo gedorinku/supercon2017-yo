@@ -109,8 +109,9 @@ private:
 
 struct Status {
     int eval;
-    vector<int> process;
+    unordered_set<int> process;
     vector<bitset<2>> usedAlpha;
+
 
     Status() : eval(INF) {
     }
@@ -118,7 +119,7 @@ struct Status {
     Status(int n) : eval(INF), usedAlpha(26, bitset<2>(0)) {
     }
 
-    Status(const int eval, const vector<int>& process, const vector<bitset<2>>& usedAlpha)
+    Status(const int eval, const unordered_set<int>& process, const vector<bitset<2>>& usedAlpha)
         : eval(eval), process(process), usedAlpha(usedAlpha) {
     }
 
@@ -243,17 +244,18 @@ inline string Merge(const string& a, const string& b) {
 void PrintAnswer(const Status& ans) {
     Cross cross[MAX_N];
     string current;
+    auto it = ans.process.begin();
     {
         Cross c;
-        c.x = ans.process[0] + 1;
-        c.y = ans.process[1] + 1;
+        c.x = *(it++) + 1;
+        c.y = *(it++) + 1;
         current = Merge(S[c.x - 1], S[c.y - 1]);
         strcpy(c.S, current.c_str());
         cross[0] = c;
     }
     for (int i = 2; i < ans.process.size(); ++i) {
         Cross c;
-        c.x = ans.process[i] + 1;
+        c.x = *(it++) + 1;
         c.y = n + i - 1;
         current = Merge(current, S[c.x - 1]);
         strcpy(c.S, current.c_str());
@@ -292,7 +294,7 @@ void Solve() {
             if (current.usedAlpha[i][j]) continue;
 
             for (auto k : selectedTable[i][j]) {
-                if (find(current.process.begin(), current.process.end(), k) != current.process.end()) continue;
+                if (current.process.find(k) != current.process.end()) continue;
 
                 const int eval = Evaluate(current.usedAlpha, S[k]);
                 if (eval < currentBestEval) {
@@ -312,7 +314,7 @@ void Solve() {
         //current.usedAlpha[i][j] = true;
         MarkAllKuse(current.usedAlpha, S[i]);
 
-        current.process.push_back(i);
+        current.process.insert(i);
 
         bool finished = false;
 
@@ -330,7 +332,7 @@ void Solve() {
 
         current.eval = preEval;
         current.usedAlpha = preUsedAlpha;
-        current.process.pop_back();
+        current.process.erase(i);
 
         if (finished) return;
     }
@@ -371,7 +373,7 @@ int main() {
 
             current.eval = Evaluate(S[i.second]);
             MarkAllKuse(current.usedAlpha, S[i.second]);
-            current.process.push_back(i.second);
+            current.process.insert(i.second);
             Solve();
         }
         PrintAnswer(best);
