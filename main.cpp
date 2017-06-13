@@ -448,6 +448,7 @@ int main() {
         if (best.eval != 0) {
             sort(initials.begin(), initials.end(), greater<InitialSeed>());
             for (const auto &init : initials) {
+                if (mem.find(init.usedAlpha) != mem.end()) continue;
                 current.usedAlpha = 0;
                 current.process.clear();
                 current.usedAlpha = init.usedAlpha;
@@ -455,6 +456,7 @@ int main() {
                 current.process.push_back(init.b);
 
                 Solve();
+                mem.insert(current.usedAlpha);
             }
         }
 
