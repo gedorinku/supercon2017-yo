@@ -314,7 +314,7 @@ void Solve() {
     int nextSeed;
     int currentBestEval = INF;
 
-    for (auto k : selectedS) {
+    for (const auto k : selectedS) {
         if ((current.usedAlpha & alphaSeedUsing[k]) == alphaSeedUsing[k]) continue;
         const int eval = Evaluate(current.usedAlpha, alphaSeedUsing[k]);
         if (eval < currentBestEval) {
@@ -387,6 +387,18 @@ int main() {
         }
         sort(sortedS.begin(), sortedS.end());
 
+        sortedS.erase(
+                unique(sortedS.begin(),
+                       sortedS.end(),
+                       [](const pair<int, int> &a, const pair<int, int> &b) -> bool {
+                           return S[a.second] == S[b.second];
+                       }),
+                sortedS.end());
+        selectedS.clear();
+        for (auto p : sortedS) {
+            selectedS.push_back(p.second);
+        }
+
         for (auto i = sortedS.begin(); i != sortedS.end(); ++i) {
             if ((*i).first == 0) {
                 best = Status(n);
@@ -415,12 +427,5 @@ int main() {
     auto dur = chrono::duration_cast<chrono::microseconds>(end - start);
     cerr << dur.count() / 1000.0 << "ms" << endl;
 
-    int maxv = 0;
-    for (int i = 0; i < 26; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            if (selectedTable[i][j].empty()) continue;
-            maxv++;
-        }
-    }
-    cerr << "max:" << maxv << endl;
+    cerr << "selected" << selectedS.size() << endl;
 }
