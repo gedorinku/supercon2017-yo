@@ -383,6 +383,7 @@ int main() {
     auto start = chrono::high_resolution_clock::now();
 
     bitMask = generateMask();
+    mem.reserve(MAX_N * MAX_N * 52);
 
     scanf("%d", &n);
     for (int i = 0; i < n; ++i) {
