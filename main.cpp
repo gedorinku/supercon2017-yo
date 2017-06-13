@@ -131,6 +131,27 @@ struct Status {
     }
 };
 
+struct InitialSeed {
+    int a, b;
+    int eval;
+    int64_t usedAlpha;
+
+    InitialSeed() : eval(INF) {
+    }
+
+    InitialSeed(const int a, const int b, const int eval, const int64_t usedAlpha)
+            : a(a), b(b), eval(eval), usedAlpha(usedAlpha) {
+    }
+
+    bool operator<(const InitialSeed &right) const {
+        return eval < right.eval;
+    }
+
+    bool operator>(const InitialSeed &right) const {
+        return eval > right.eval;
+    }
+};
+
 
 array<array<int64_t, 2>, 26> generateMask() {
     array<array<int64_t, 2>, 26> mask;
@@ -399,6 +420,8 @@ int main() {
             selectedS.push_back(p.second);
         }
 
+        vector<InitialSeed> initials;
+
         for (auto i = sortedS.begin(); i != sortedS.end(); ++i) {
             if ((*i).first == 0) {
                 best = Status(n);
@@ -409,17 +432,29 @@ int main() {
                 break;
             }
             for (auto j = i + 1; j != sortedS.end(); ++j) {
+                int64_t usedAlpha = 0;
+
+                MarkAllKuse(usedAlpha, i->second);
+                MarkAllKuse(usedAlpha, j->second);
+                int eval = Evaluate(usedAlpha, 0);
+
+                initials.emplace_back(InitialSeed(i->second, j->second, eval, usedAlpha));
+            }
+        }
+
+        if (best.eval != 0) {
+            sort(initials.begin(), initials.end(), greater<InitialSeed>());
+            for (const auto &init : initials) {
                 current.usedAlpha = 0;
                 current.process.clear();
+                current.usedAlpha = init.usedAlpha;
+                current.process.push_back(init.a);
+                current.process.push_back(init.b);
 
-                MarkAllKuse(current.usedAlpha, (*i).second);
-                MarkAllKuse(current.usedAlpha, (*j).second);
-                current.process.push_back((*i).second);
-                current.process.push_back((*j).second);
-                current.eval = Evaluate(current.usedAlpha, 0);
                 Solve();
             }
         }
+
         PrintAnswer(best);
     }
 
