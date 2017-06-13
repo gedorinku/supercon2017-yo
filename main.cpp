@@ -311,27 +311,18 @@ void MarkAllKuse(int64_t &usedAlpha, const int index) {
 Status current, best;
 
 void Solve() {
-    //cerr << "::" << preUsed << endl;
     int nextSeed;
     int currentBestEval = INF;
 
-//    for (int i = 0; i < 26; ++i) {
-//        for (int j = 0; j < 2; ++j) {
-//            if (getBit(current.usedAlpha, i, j)) continue;
-
-
     for (auto k : selectedS) {
-        if (!(current.usedAlpha & alphaSeedUsing[k])) continue;
+        if ((current.usedAlpha & alphaSeedUsing[k]) == alphaSeedUsing[k]) continue;
         const int eval = Evaluate(current.usedAlpha, alphaSeedUsing[k]);
         if (eval < currentBestEval) {
             currentBestEval = eval;
             nextSeed = k;
         }
     }
-//        }
-//    }
 
-    //for (auto p : nextSeed) {
     if (currentBestEval != INF) {
         const int i = nextSeed;
         int preEval = current.eval;
@@ -406,8 +397,6 @@ int main() {
                 break;
             }
             for (auto j = i + 1; j != sortedS.end(); ++j) {
-                //cerr << i.second << "#" << endl;
-                //current = Status(n);
                 current.usedAlpha = 0;
                 current.process.clear();
 
