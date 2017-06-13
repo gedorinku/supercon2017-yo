@@ -303,7 +303,7 @@ void PrintAnswer(const Status &ans) {
     Output(1, ans.process.size(), cross);
 }
 
-void MarkAllKuse(int64_t& usedAlpha, const int index) {
+void MarkAllKuse(int64_t &usedAlpha, const int index) {
     usedAlpha |= alphaSeedUsing[index];
 }
 
@@ -319,21 +319,13 @@ void Solve() {
 //        for (int j = 0; j < 2; ++j) {
 //            if (getBit(current.usedAlpha, i, j)) continue;
 
-    {
-        int count = 0;
-        for (int64_t bit = 1; bit < (1LL << 52); bit <<= 1, ++count) {
-            if (current.usedAlpha & bit) continue;
 
-            int i = count % 26, j = count / 26;
-
-
-            for (auto k : selectedTable[i][j]) {
-                const int eval = Evaluate(current.usedAlpha, alphaSeedUsing[k]);
-                if (eval < currentBestEval) {
-                    currentBestEval = eval;
-                    nextSeed = k;
-                }
-            }
+    for (auto k : selectedS) {
+        if (!(current.usedAlpha & alphaSeedUsing[k])) continue;
+        const int eval = Evaluate(current.usedAlpha, alphaSeedUsing[k]);
+        if (eval < currentBestEval) {
+            currentBestEval = eval;
+            nextSeed = k;
         }
     }
 //        }
