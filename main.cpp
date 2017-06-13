@@ -398,18 +398,26 @@ int main() {
         }
         sort(sortedS.begin(), sortedS.end());
 
-        for (auto i : sortedS) {
-            //cerr << i.second << "#" << endl;
-            current = Status(n);
+        for (auto i = sortedS.begin(); i != sortedS.end(); ++i) {
+            if ((*i).first == 0) {
+                best = Status(n);
+                best.eval = 0;
+                MarkAllKuse(best.usedAlpha, S[(*i).second]);
+                current.process.insert((*i).second);
 
-            current.eval = Evaluate(S[i.second]);
-            MarkAllKuse(current.usedAlpha, S[i.second]);
-            current.process.insert(i.second);
-            if (i.first == 0) {
-                best = current;
                 break;
             }
-            Solve();
+            for (auto j = i + 1; j != sortedS.end(); ++j) {
+                //cerr << i.second << "#" << endl;
+                current = Status(n);
+
+                MarkAllKuse(current.usedAlpha, S[(*i).second]);
+                MarkAllKuse(current.usedAlpha, S[(*j).second]);
+                current.process.insert((*i).second);
+                current.process.insert((*j).second);
+                current.eval = Evaluate(current.usedAlpha, 0);
+                Solve();
+            }
         }
         PrintAnswer(best);
     }
