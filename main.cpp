@@ -108,7 +108,7 @@ private:
 
 struct Status {
     int eval;
-    unordered_set<int> process;
+    vector<int> process;
     int64_t usedAlpha;
 
 
@@ -118,7 +118,7 @@ struct Status {
     Status(int n) : eval(INF), usedAlpha(0) {
     }
 
-    Status(const int eval, const unordered_set<int> &process, const int64_t &usedAlpha)
+    Status(const int eval, const vector<int> &process, const int64_t &usedAlpha)
             : eval(eval), process(process), usedAlpha(usedAlpha) {
     }
 
@@ -303,12 +303,8 @@ void PrintAnswer(const Status &ans) {
     Output(1, ans.process.size(), cross);
 }
 
-void MarkAllKuse(int64_t& usedAlpha, const string &seed) {
-    for (auto c : seed) {
-        const int isLow = islower(c) ? LOW : UP;
-        const int index = toupper(c) - 'A';
-        setBit(usedAlpha, index, isLow, true);
-    }
+void MarkAllKuse(int64_t& usedAlpha, const int index) {
+    usedAlpha |= alphaSeedUsing[index];
 }
 
 
@@ -319,9 +315,17 @@ void Solve() {
     int nextSeed;
     int currentBestEval = INF;
 
-    for (int i = 0; i < 26; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            if (getBit(current.usedAlpha, i, j)) continue;
+//    for (int i = 0; i < 26; ++i) {
+//        for (int j = 0; j < 2; ++j) {
+//            if (getBit(current.usedAlpha, i, j)) continue;
+
+    {
+        int count = 0;
+        for (int64_t bit = 1; bit < (1LL << 52); bit <<= 1, ++count) {
+            if (current.usedAlpha & bit) continue;
+
+            int i = count % 26, j = count / 26;
+
 
             for (auto k : selectedTable[i][j]) {
                 const int eval = Evaluate(current.usedAlpha, alphaSeedUsing[k]);
@@ -332,6 +336,8 @@ void Solve() {
             }
         }
     }
+//        }
+//    }
 
     //for (auto p : nextSeed) {
     if (currentBestEval != INF) {
@@ -340,9 +346,9 @@ void Solve() {
         auto preUsedAlpha = current.usedAlpha;
         current.eval = currentBestEval;
         //current.usedAlpha[i][j] = true;
-        MarkAllKuse(current.usedAlpha, S[i]);
+        MarkAllKuse(current.usedAlpha, i);
 
-        current.process.insert(i);
+        current.process.push_back(i);
 
         bool finished = false;
 
@@ -360,7 +366,7 @@ void Solve() {
 
         current.eval = preEval;
         current.usedAlpha = preUsedAlpha;
-        current.process.erase(i);
+        current.process.pop_back();
 
         if (finished) return;
     }
@@ -402,19 +408,21 @@ int main() {
             if ((*i).first == 0) {
                 best = Status(n);
                 best.eval = 0;
-                MarkAllKuse(best.usedAlpha, S[(*i).second]);
-                current.process.insert((*i).second);
+                MarkAllKuse(best.usedAlpha, (*i).second);
+                best.process.push_back((*i).second);
 
                 break;
             }
             for (auto j = i + 1; j != sortedS.end(); ++j) {
                 //cerr << i.second << "#" << endl;
-                current = Status(n);
+                //current = Status(n);
+                current.usedAlpha = 0;
+                current.process.clear();
 
-                MarkAllKuse(current.usedAlpha, S[(*i).second]);
-                MarkAllKuse(current.usedAlpha, S[(*j).second]);
-                current.process.insert((*i).second);
-                current.process.insert((*j).second);
+                MarkAllKuse(current.usedAlpha, (*i).second);
+                MarkAllKuse(current.usedAlpha, (*j).second);
+                current.process.push_back((*i).second);
+                current.process.push_back((*j).second);
                 current.eval = Evaluate(current.usedAlpha, 0);
                 Solve();
             }
