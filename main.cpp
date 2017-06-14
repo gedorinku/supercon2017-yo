@@ -32,7 +32,7 @@ void Output(int yn, int m, struct Cross *c) {
 
 constexpr int MAX_N = 2005;
 constexpr int INF = 1 << 30;
-constexpr int SECOND_COUNT = 300;
+constexpr int SECOND_COUNT = 200;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
 constexpr int UP = 0;
@@ -482,7 +482,7 @@ int main() {
                             chrono::high_resolution_clock::now() - start
                     );
 
-                    if (8800 < dur.count()) {
+                    if (8000 < dur.count()) {
                         SolveFast();
                         goto end;
                     }
