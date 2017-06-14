@@ -31,6 +31,7 @@ void Output(int yn, int m, struct Cross *c) {
 
 
 constexpr int MAX_N = 2005;
+constexpr int BEAM_WIDTH = 5;
 constexpr int INF = 1 << 30;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
@@ -379,6 +380,42 @@ void Solve() {
     }
 }
 
+void BeamSearch() {
+    vector<Status> next;
+    queue<Status> q;
+
+    for (auto s : selectedS) {
+        int64_t usedAlpha = 0;
+        const int eval = Evaluate(usedAlpha, alphaSeedUsing[s]);
+        next.emplace_back(Status(eval, {s}, usedAlpha));
+    }
+
+    while (next.size()) {
+        sort(next.begin(), next.end());
+        for (int i = 0; i < min((int) next.size(), BEAM_WIDTH); ++i) {
+            q.push(next[i]);
+        }
+
+        while (q.size()) {
+            auto status = q.front();
+            q.pop();
+            for (const auto k : selectedS) {
+                if ((status.usedAlpha & alphaSeedUsing[k]) == alphaSeedUsing[k]) continue;
+                const int eval = Evaluate(status.usedAlpha, alphaSeedUsing[k]);
+                auto nextProcess = status.process;
+                nextProcess.emplace_back(k);
+
+                if (eval == 0) {
+                    best = Status(eval, nextProcess, status.usedAlpha | alphaSeedUsing[k]);
+                    return;
+                }
+
+                next.emplace_back(Status(eval, nextProcess, status.usedAlpha | alphaSeedUsing[k]));
+            }
+        }
+    }
+}
+
 int main() {
     auto start = chrono::high_resolution_clock::now();
 
@@ -424,8 +461,6 @@ int main() {
             selectedS.push_back(p.second);
         }
 
-        vector<InitialSeed> initials;
-
         for (auto i = sortedS.begin(); i != sortedS.end(); ++i) {
             if ((*i).first == 0) {
                 best = Status(n);
@@ -435,30 +470,10 @@ int main() {
 
                 break;
             }
-            for (auto j = i + 1; j != sortedS.end(); ++j) {
-                int64_t usedAlpha = 0;
-
-                MarkAllKuse(usedAlpha, i->second);
-                MarkAllKuse(usedAlpha, j->second);
-                int eval = Evaluate(usedAlpha, 0);
-
-                initials.emplace_back(InitialSeed(i->second, j->second, eval, usedAlpha));
-            }
         }
 
         if (best.eval != 0) {
-            sort(initials.begin(), initials.end(), greater<InitialSeed>());
-            for (const auto &init : initials) {
-                if (mem.find(init.usedAlpha) != mem.end()) continue;
-                current.usedAlpha = 0;
-                current.process.clear();
-                current.usedAlpha = init.usedAlpha;
-                current.process.push_back(init.a);
-                current.process.push_back(init.b);
-
-                Solve();
-                mem.insert(current.usedAlpha);
-            }
+            BeamSearch();
         }
 
         PrintAnswer(best);
