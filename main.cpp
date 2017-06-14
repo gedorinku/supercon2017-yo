@@ -435,14 +435,22 @@ int main() {
 
                 break;
             }
-            for (auto j = i + 1; j != sortedS.end(); ++j) {
+
+            vector<InitialSeed> second;
+            for (auto j = sortedS.begin(); j != sortedS.end(); ++j) {
+                if (i == j) continue;
                 int64_t usedAlpha = 0;
 
                 MarkAllKuse(usedAlpha, i->second);
                 MarkAllKuse(usedAlpha, j->second);
                 int eval = Evaluate(usedAlpha, 0);
 
-                initials.emplace_back(InitialSeed(i->second, j->second, eval, usedAlpha));
+                second.emplace_back(InitialSeed(i->second, j->second, eval, usedAlpha));
+            }
+            sort(second.begin(), second.end());
+
+            for (auto it = second.begin(); it != second.end() - (second.size() / 2); ++it) {
+                initials.emplace_back(*it);
             }
         }
 
