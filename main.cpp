@@ -449,7 +449,7 @@ int main() {
             }
             sort(second.begin(), second.end());
 
-            for (auto it = second.begin(); it != second.end() - (second.size() / 2); ++it) {
+            for (auto it = second.begin(); it != second.end() - (second.size() / 3); ++it) {
                 initials.emplace_back(*it);
             }
         }
