@@ -381,7 +381,7 @@ void Solve() {
 }
 
 void SolveFast() {
-    //mem.clear();
+    mem.clear();
 
     for (const auto s : selectedS) {
         current.eval = Evaluate(alphaSeedUsing[s], 0);
