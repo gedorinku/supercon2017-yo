@@ -449,13 +449,13 @@ int main() {
             }
             sort(second.begin(), second.end());
 
-            for (auto it = second.begin(); it != second.end() - (second.size() / 3); ++it) {
+            for (auto it = second.begin(); it != second.end() && it - second.begin() < 300; ++it) {
                 initials.emplace_back(*it);
             }
         }
 
         if (best.eval != 0) {
-            sort(initials.begin(), initials.end(), greater<InitialSeed>());
+            //sort(initials.begin(), initials.end());
             for (const auto &init : initials) {
                 if (mem.find(init.usedAlpha) != mem.end()) continue;
                 current.usedAlpha = 0;
