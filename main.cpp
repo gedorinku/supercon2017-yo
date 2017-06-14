@@ -333,7 +333,7 @@ void MarkAllKuse(int64_t &usedAlpha, const int index) {
 Status current, best;
 unordered_set<int64_t> mem;
 
-void Solve(bool flag) {
+void Solve(const bool flag) {
     if (flag && mem.find(current.usedAlpha) != mem.end()) return;
     int nextSeed;
     int currentBestEval = INF;
@@ -368,7 +368,7 @@ void Solve(bool flag) {
         }
 
         if (best.process.empty() || current.process.size() < best.process.size() - 1) {
-            Solve();
+            Solve(flag);
             mem.insert(current.usedAlpha);
         }
 
