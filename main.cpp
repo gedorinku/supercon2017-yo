@@ -32,6 +32,7 @@ void Output(int yn, int m, struct Cross *c) {
 
 constexpr int MAX_N = 2005;
 constexpr int INF = 1 << 30;
+constexpr int SECOND_COUNT = 300;
 constexpr char YES[] = "YES";
 constexpr char NO[] = "NO";
 constexpr int UP = 0;
@@ -401,7 +402,7 @@ int main() {
     auto start = chrono::high_resolution_clock::now();
 
     bitMask = generateMask();
-    mem.reserve(MAX_N * MAX_N * 52);
+    mem.reserve(MAX_N * SECOND_COUNT * 52);
 
     scanf("%d", &n);
     for (int i = 0; i < n; ++i) {
@@ -467,7 +468,7 @@ int main() {
             }
             sort(second.begin(), second.end());
 
-            for (auto it = second.begin(); it != second.end() && it - second.begin() < 300; ++it) {
+            for (auto it = second.begin(); it != second.end() && it - second.begin() < SECOND_COUNT; ++it) {
                 initials.emplace_back(*it);
             }
         }
