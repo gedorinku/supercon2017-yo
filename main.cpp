@@ -113,7 +113,7 @@ struct Status {
     int64_t usedAlpha;
 
 
-    Status() : eval(INF) {
+    Status() : eval(INF), usedAlpha(0) {
     }
 
     Status(int n) : eval(INF), usedAlpha(0) {
@@ -381,7 +381,7 @@ void Solve() {
 }
 
 void SolveFast() {
-    mem.clear();
+    //mem.clear();
 
     for (const auto s : selectedS) {
         current.eval = Evaluate(alphaSeedUsing[s], 0);
@@ -394,7 +394,7 @@ void SolveFast() {
             return;
         }
         Solve();
-        mem.insert(current.usedAlpha);
+        //mem.insert(current.usedAlpha);
     }
 }
 
@@ -464,6 +464,16 @@ int main() {
                 MarkAllKuse(usedAlpha, j->second);
                 int eval = Evaluate(usedAlpha, 0);
 
+                if (eval == 0) {
+                    if (best.eval == 0) break;
+                    best = Status();
+                    best.eval = 0;
+                    best.process.emplace_back(i->second);
+                    best.process.emplace_back(j->second);
+                    best.usedAlpha = usedAlpha;
+                    break;
+                }
+
                 second.emplace_back(InitialSeed(i->second, j->second, eval, usedAlpha));
             }
             sort(second.begin(), second.end());
@@ -492,6 +502,7 @@ int main() {
                 current.usedAlpha = 0;
                 current.process.clear();
                 current.usedAlpha = init.usedAlpha;
+                current.eval = init.eval;
                 current.process.push_back(init.a);
                 current.process.push_back(init.b);
 
