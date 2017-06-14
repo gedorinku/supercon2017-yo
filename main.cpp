@@ -379,6 +379,24 @@ void Solve() {
     }
 }
 
+void SolveFast() {
+    mem.clear();
+
+    for (const auto s : selectedS) {
+        current.eval = Evaluate(alphaSeedUsing[s], 0);
+        current.usedAlpha = alphaSeedUsing[s];
+        current.process.clear();
+        current.process.emplace_back(s);
+
+        if (current.eval == 0) {
+            best = current;
+            return;
+        }
+        Solve();
+        mem.insert(current.usedAlpha);
+    }
+}
+
 int main() {
     auto start = chrono::high_resolution_clock::now();
 
@@ -455,8 +473,20 @@ int main() {
         }
 
         if (best.eval != 0) {
-            //sort(initials.begin(), initials.end());
+            int loopCount = 0;
             for (const auto &init : initials) {
+                loopCount++;
+                if (loopCount % 2048 == 0) {
+                    const auto dur = chrono::duration_cast<chrono::milliseconds>(
+                            chrono::high_resolution_clock::now() - start
+                    );
+
+                    if (8800 < dur.count()) {
+                        SolveFast();
+                        goto end;
+                    }
+                }
+
                 if (mem.find(init.usedAlpha) != mem.end()) continue;
                 current.usedAlpha = 0;
                 current.process.clear();
@@ -469,6 +499,7 @@ int main() {
             }
         }
 
+        end:
         PrintAnswer(best);
     }
 
