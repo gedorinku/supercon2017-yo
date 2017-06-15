@@ -362,7 +362,6 @@ void Solve(const bool flag) {
         if (current.eval == 0) {
             if (best.process.empty() || current.process.size() < best.process.size()) {
                 best = current;
-                cerr << "best:" << best.process.size() << endl;
             }
             finished = true;
         }
@@ -517,7 +516,4 @@ int main() {
 
     auto end = chrono::high_resolution_clock::now();
     auto dur = chrono::duration_cast<chrono::microseconds>(end - start);
-    cerr << dur.count() / 1000.0 << "ms" << endl;
-
-    cerr << "selected" << selectedS.size() << endl;
 }
